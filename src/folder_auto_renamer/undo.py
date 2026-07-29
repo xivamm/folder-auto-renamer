@@ -162,3 +162,42 @@ class UndoManager:
         self.logger.info(summary)
         print(blue(f"\n{summary}"))
         return restored_count > 0
+
+    def export_history_to_csv(self, export_path: Path) -> bool:
+        """Exports complete rename history to CSV file.
+
+        Args:
+            export_path: Destination CSV file path.
+
+        Returns:
+            bool: True if export succeeded.
+        """
+        import csv
+
+        history = self._load_all_history()
+        if not history:
+            return False
+
+        try:
+            export_path = Path(export_path)
+            export_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(export_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Timestamp", "Target Directory", "Old Name", "New Name", "Old Path", "New Path"])
+                for session in history:
+                    timestamp = session.get("timestamp", "")
+                    target_dir = session.get("target_dir", "")
+                    for item in session.get("mappings", []):
+                        writer.writerow([
+                            timestamp,
+                            target_dir,
+                            item.get("old_name", ""),
+                            item.get("new_name", ""),
+                            item.get("old_path", ""),
+                            item.get("new_path", ""),
+                        ])
+            return True
+        except Exception as err:
+            self.logger.error(f"Failed to export history to CSV: {err}")
+            return False
+

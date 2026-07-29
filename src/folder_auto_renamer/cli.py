@@ -64,6 +64,12 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--gui",
+        action="store_true",
+        help="Launch the Auto Folder Renamer Pro graphical desktop application.",
+    )
+
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable detailed verbose output for troubleshooting.",
@@ -73,21 +79,12 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def parse_args_to_config(args: argparse.Namespace) -> RenamerConfig:
-    """Converts parsed command-line arguments into a RenamerConfig object.
-
-    Args:
-        args: Parsed argparse namespace.
-
-    Returns:
-        RenamerConfig: Validated application configuration.
-
-    Raises:
-        ValueError: If path is missing when --undo is not specified.
-    """
+    """Converts parsed command-line arguments into a RenamerConfig object."""
     target_path = Path(args.path) if args.path else None
 
-    if not args.undo and not target_path:
-        raise ValueError("Target directory path is required unless --undo is specified.")
+    if not args.undo and not args.gui and not target_path:
+        # Default to launching GUI if no path provided
+        args.gui = True
 
     config = RenamerConfig(
         target_path=target_path,
@@ -96,24 +93,23 @@ def parse_args_to_config(args: argparse.Namespace) -> RenamerConfig:
         dry_run=args.dry_run,
         undo=args.undo,
         verbose=args.verbose,
+        gui_mode=args.gui,
     )
     config.validate()
     return config
 
 
 def main(cli_args: Optional[List[str]] = None) -> int:
-    """Main entrypoint for CLI execution.
-
-    Args:
-        cli_args: List of command-line argument strings (defaults to sys.argv[1:]).
-
-    Returns:
-        int: Process exit code (0 for success, non-zero for error).
-    """
+    """Main entrypoint for CLI/GUI execution."""
     parser = create_parser()
     parsed_args = parser.parse_args(cli_args)
 
     try:
+        if parsed_args.gui or (not parsed_args.path and not parsed_args.undo):
+            from folder_auto_renamer.gui import launch_gui
+            launch_gui()
+            return 0
+
         config = parse_args_to_config(parsed_args)
         renamer = FolderRenamer(config)
         renamer.run()
@@ -128,6 +124,7 @@ def main(cli_args: Optional[List[str]] = None) -> int:
     except Exception as err:
         print(red(f"Unexpected error: {err}"))
         return 1
+
 
 
 if __name__ == "__main__":

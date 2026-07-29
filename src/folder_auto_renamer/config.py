@@ -1,39 +1,71 @@
 """Configuration settings and data structures for folder-auto-renamer."""
 
 from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 from typing import Optional
 
 
+class RenameMode(Enum):
+    """Supported folder renaming modes."""
+    SEQUENTIAL = "sequential"
+    REPLACE_TEXT = "replace_text"
+    ADD_PREFIX = "add_prefix"
+    ADD_SUFFIX = "add_suffix"
+    UPPERCASE = "uppercase"
+    LOWERCASE = "lowercase"
+    TITLE_CASE = "title_case"
+    REMOVE_SPACES = "remove_spaces"
+    REPLACE_SPACES_UNDERSCORE = "replace_spaces_underscore"
+    REMOVE_SPECIAL_CHARS = "remove_special_chars"
+
+
+class SortOrder(Enum):
+    """Folder sorting modes prior to renaming."""
+    ALPHABETICAL = "alphabetical"
+    DATE_CREATED = "date_created"
+    DATE_MODIFIED = "date_modified"
+    FOLDER_SIZE = "folder_size"
+
+
+class DuplicateStrategy(Enum):
+    """Collision resolution strategy for existing target folder names."""
+    SKIP = "skip"
+    AUTO_INDEX = "auto_index"  # e.g., Folder (1)
+
+
 @dataclass
 class RenamerConfig:
-    """Holds operational configuration options for folder auto-renamer.
-
-    Attributes:
-        target_path: Path to the target directory containing subfolders to rename.
-        prefix: Custom string prefix applied to each folder.
-        start: Initial starting number for sequential folder counter.
-        dry_run: If True, previews rename actions without modifying disk.
-        undo: If True, triggers undo operation using previous history log.
-        verbose: If True, outputs detailed debug logging information.
-        log_file: Path where log messages are recorded.
-        history_file: Path where rename history is saved for undo operations.
-    """
+    """Holds operational configuration options for folder auto-renamer."""
 
     target_path: Optional[Path] = None
+    mode: RenameMode = RenameMode.SEQUENTIAL
     prefix: str = "Project-"
+    suffix: str = ""
+    find_text: str = ""
+    replace_text: str = ""
     start: int = 1
+    min_zero_padding: int = 3
     dry_run: bool = False
     undo: bool = False
     verbose: bool = False
+    gui_mode: bool = False
+
+    # Filters and Options
+    include_subfolders: bool = False
+    skip_hidden: bool = True
+    filter_empty_only: bool = False
+    filter_non_empty_only: bool = False
+    sort_order: SortOrder = SortOrder.ALPHABETICAL
+    duplicate_strategy: DuplicateStrategy = DuplicateStrategy.SKIP
+
+    # File paths
     log_file: Path = Path("logs/folder-auto-renamer.log")
     history_file: Path = Path.home() / ".folder_auto_renamer_history.json"
+    settings_file: Path = Path.home() / ".folder_auto_renamer_gui_settings.json"
 
     def validate(self) -> None:
-        """Validates configuration settings before starting execution.
-
-        Raises:
-            ValueError: If starting number is negative or path validation fails.
-        """
+        """Validates configuration settings before starting execution."""
         if self.start < 0:
             raise ValueError("Starting number cannot be negative.")
+

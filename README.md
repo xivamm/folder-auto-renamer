@@ -1,23 +1,34 @@
-# folder-auto-renamer
+# Auto Folder Renamer Pro
 
-> Automatically rename folders with intelligent sequential naming.
+> Rename hundreds of folders in seconds — no coding required.
 
-`folder-auto-renamer` is a professional, high-performance Windows command-line utility built entirely with the Python Standard Library. It automatically scans subdirectories inside a target directory and renames them sequentially according to customizable rules, zero-padding standards, and collision safety checks.
+`Auto Folder Renamer Pro` is a professional desktop application and Windows command-line utility built entirely with Python 3.11+ and standard library (`tkinter`, `ttk`). It automatically scans subdirectories and renames them using customizable modes, live previewing, zero-padding, collision safety checks, dark mode support, presets, and persistent undo history.
 
 ---
 
-## Features
+## Key Features
 
-- **Sequential Renaming**: Renames folders predictably using custom prefixes and sequential integers.
-- **Custom Prefixes & Counters**: Flexible customization for starting index (`--start`) and string prefix (`--prefix`).
-- **Dynamic Zero Padding**: Automatically maintains consistent digit alignment across items (e.g. `001`, `002`, `003` or `1000`, `1001`).
-- **Dry-Run Preview**: Preview every rename transformation safely before executing disk writes (`--dry-run`).
-- **Persistent Undo Engine**: Revert the last rename operation cleanly (`--undo`), with history persisting across application restarts.
-- **Hidden & System Folder Protection**: Automatically ignores dotfiles (`.git`, `.vscode`), system folders, and Windows hidden folders via Win32 `GetFileAttributesW`.
-- **Duplicate Collision Protection**: Skips renaming if target destination names already exist on disk.
-- **Real-time Progress Indicator**: Outputs clear step status (`[1/25] 4%`) during processing.
-- **Colored Terminal Output**: Visual status feedback using ANSI colors (Green for success, Yellow for warnings/skips, Blue for info, Red for errors) with automatic VT100 console setup.
-- **Zero Third-Party Dependencies**: Pure Python 3.11+ standard library implementation.
+- **Desktop GUI & CLI Dual Execution**: Run as a graphical Tkinter desktop app (`folder-auto-renamer --gui`) or headlessly via command-line interface.
+- **10 Advanced Renaming Modes**:
+  1. **Sequential**: `Project-001`, `Project-002`
+  2. **Replace Text**: Swap specific text substrings (e.g. `Vacation -> Trip`)
+  3. **Add Prefix**: Prepend custom string (e.g. `2026_`)
+  4. **Add Suffix**: Append custom string (e.g. `_Backup`)
+  5. **Uppercase**: `MY_FOLDER`
+  6. **Lowercase**: `my_folder`
+  7. **Title Case**: `My Folder Name`
+  8. **Remove Spaces**: `MyFolderName`
+  9. **Replace Spaces with Underscore**: `My_Folder_Name`
+  10. **Clean Special Characters**: Remove non-alphanumeric special characters.
+- **Live Preview Table**: Interactive `Treeview` displaying current folder name vs proposed new name, with status indicators highlighting duplicate conflicts.
+- **One-Click Naming Presets**: Quick-apply preset configurations for Camera Photos (`IMG-`), YouTube Projects (`Video-`), School Files (`Class-`), Client Projects (`Client-`), and Documents (`Doc-`).
+- **Dark & Light Mode Support**: Instant theme toggle for comfortable viewing.
+- **Auto-Indexing Duplicate Protection**: Resolve existing folder collisions automatically with index suffixes (e.g. `Project (1)`).
+- **Sorting & Filtering Options**: Sort folders by Name, Date Created, Date Modified, or Folder Size. Include or exclude subfolders and hidden system directories.
+- **CSV History Export**: Export undo history logs to CSV spreadsheet files.
+- **Persistent Settings**: Saves last-used directory and UI preferences to `~/.folder_auto_renamer_gui_settings.json`.
+- **Zero Third-Party Dependencies**: Pure Python Standard Library implementation (`tkinter`, `ttk`, `json`, `csv`, `pathlib`).
+
 
 ---
 

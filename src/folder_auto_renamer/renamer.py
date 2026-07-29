@@ -30,16 +30,73 @@ class FolderRenamer:
         self.logger = setup_logger(config.log_file, config.verbose)
         self.undo_manager = UndoManager(config.history_file)
 
-    def run(self) -> Tuple[int, int]:
-        """Executes the rename process according to configuration parameters.
+    def generate_preview(self) -> List[Dict[str, str]]:
+        """Generates a preview table of proposed renames without altering disk contents.
 
         Returns:
-            Tuple[int, int]: Count of (renamed_folders, skipped_folders).
-
-        Raises:
-            DirectoryNotFoundError: If target path is invalid.
-            PermissionDeniedError: If permission is denied.
+            List[Dict[str, str]]: List of records containing 'old_name', 'new_name', 'status', 'old_path', 'new_path', 'conflict'.
         """
+        if not self.config.target_path:
+            return []
+
+        target_dir = self.config.target_path.resolve()
+        scanner = FolderScanner(target_dir)
+        folders = scanner.scan(
+            include_subfolders=self.config.include_subfolders,
+            filter_empty_only=self.config.filter_empty_only,
+            filter_non_empty_only=self.config.filter_non_empty_only,
+            sort_order_str=self.config.sort_order.value,
+        )
+
+        preview_rows: List[Dict[str, str]] = []
+        total_count = len(folders)
+        from folder_auto_renamer.modes import transform_name
+
+        existing_names_set = {p.name for p in folders}
+        generated_target_names: set[str] = set()
+
+        for idx, folder_path in enumerate(folders):
+            parent_dir = folder_path.parent
+            old_name = folder_path.name
+            proposed_name = transform_name(old_name, idx, total_count, self.config)
+
+            status = "Ready"
+            conflict = False
+
+            if old_name == proposed_name:
+                status = "Unchanged"
+            else:
+                target_path = parent_dir / proposed_name
+
+                # Auto-indexing resolution if configured
+                from folder_auto_renamer.config import DuplicateStrategy
+                if self.config.duplicate_strategy == DuplicateStrategy.AUTO_INDEX:
+                    counter = 1
+                    base_proposed = proposed_name
+                    while target_path.exists() or proposed_name in generated_target_names:
+                        proposed_name = f"{base_proposed} ({counter})"
+                        target_path = parent_dir / proposed_name
+                        counter += 1
+
+                elif target_path.exists() and target_path != folder_path:
+                    status = "Conflict (Target Exists)"
+                    conflict = True
+
+            generated_target_names.add(proposed_name)
+
+            preview_rows.append({
+                "old_name": old_name,
+                "new_name": proposed_name,
+                "status": status,
+                "old_path": str(folder_path),
+                "new_path": str(parent_dir / proposed_name),
+                "conflict": "Yes" if conflict else "No",
+            })
+
+        return preview_rows
+
+    def run(self, progress_callback=None) -> Tuple[int, int]:
+        """Executes the rename process according to configuration parameters."""
         if self.config.undo:
             self.logger.info("Executing requested undo operation.")
             self.undo_manager.undo_last_session(dry_run=self.config.dry_run)
@@ -49,13 +106,15 @@ class FolderRenamer:
             raise DirectoryNotFoundError("Target path is required for rename execution.")
 
         target_dir = self.config.target_path.resolve()
-        self.logger.info(f"Starting folder-auto-renamer process in target directory '{target_dir}'")
-        self.logger.info(
-            f"Parameters: prefix='{self.config.prefix}', start={self.config.start}, dry_run={self.config.dry_run}"
-        )
+        self.logger.info(f"Starting folder-auto-renamer in directory '{target_dir}'")
 
         scanner = FolderScanner(target_dir)
-        folders = scanner.scan()
+        folders = scanner.scan(
+            include_subfolders=self.config.include_subfolders,
+            filter_empty_only=self.config.filter_empty_only,
+            filter_non_empty_only=self.config.filter_non_empty_only,
+            sort_order_str=self.config.sort_order.value,
+        )
 
         if not folders:
             msg = f"No eligible folders found to rename in '{target_dir}'"
@@ -64,9 +123,6 @@ class FolderRenamer:
             return (0, 0)
 
         total_count = len(folders)
-        padding_width = calculate_zero_padding(self.config.start, total_count)
-
-        self.logger.info(f"Discovered {total_count} folders. Calculated zero-padding digit width: {padding_width}")
         print(blue(f"Found {total_count} folder(s) to process in '{target_dir}'"))
         if self.config.dry_run:
             print(yellow("=== DRY RUN MODE - No filesystem modifications will be made ===\n"))
@@ -76,15 +132,21 @@ class FolderRenamer:
         renamed_count = 0
         skipped_count = 0
 
+        from folder_auto_renamer.modes import transform_name
+        from folder_auto_renamer.config import DuplicateStrategy
+
+        generated_target_names: set[str] = set()
+
         for idx, folder_path in enumerate(folders):
-            current_num = self.config.start + idx
-            new_name = format_sequential_name(self.config.prefix, current_num, padding_width)
+            parent_dir = folder_path.parent
             old_name = folder_path.name
-            target_path = target_dir / new_name
+            new_name = transform_name(old_name, idx, total_count, self.config)
+            target_path = parent_dir / new_name
 
             status = progress.update(1)
+            if progress_callback:
+                progress_callback(idx + 1, total_count)
 
-            # Skip if folder is already named as expected
             if old_name == new_name:
                 msg = f"{status} [SKIPPED] '{old_name}' is already properly named."
                 self.logger.info(f"Skipped folder '{old_name}': already named correctly.")
@@ -92,14 +154,22 @@ class FolderRenamer:
                 skipped_count += 1
                 continue
 
-            # Duplicate protection: skip if target path already exists on disk
             if target_path.exists():
-                msg = f"{status} [SKIPPED] Target folder '{new_name}' already exists."
-                self.logger.warning(f"Skipped renaming '{old_name}': target '{new_name}' exists.")
-                print(yellow(msg))
-                skipped_count += 1
-                continue
+                if self.config.duplicate_strategy == DuplicateStrategy.AUTO_INDEX:
+                    counter = 1
+                    base_new = new_name
+                    while target_path.exists() or new_name in generated_target_names:
+                        new_name = f"{base_new} ({counter})"
+                        target_path = parent_dir / new_name
+                        counter += 1
+                else:
+                    msg = f"{status} [SKIPPED] Target folder '{new_name}' already exists."
+                    self.logger.warning(f"Skipped renaming '{old_name}': target '{new_name}' exists.")
+                    print(yellow(msg))
+                    skipped_count += 1
+                    continue
 
+            generated_target_names.add(new_name)
             rename_label = f"{old_name} -> {new_name}"
 
             if self.config.dry_run:
@@ -123,18 +193,12 @@ class FolderRenamer:
                         }
                     )
                     renamed_count += 1
-                except PermissionError as err:
-                    msg = f"{status} [ERROR] Permission denied renaming '{old_name}' to '{new_name}': {err}"
-                    self.logger.error(msg)
-                    print(red(msg))
-                    skipped_count += 1
                 except Exception as err:
                     msg = f"{status} [ERROR] Failed to rename '{old_name}' to '{new_name}': {err}"
                     self.logger.error(msg)
                     print(red(msg))
                     skipped_count += 1
 
-        # Record session history for undo functionality if changes occurred
         if not self.config.dry_run and history_mappings:
             self.undo_manager.record_session(history_mappings, target_dir)
 
@@ -145,3 +209,4 @@ class FolderRenamer:
         print(blue(summary))
 
         return (renamed_count, skipped_count)
+

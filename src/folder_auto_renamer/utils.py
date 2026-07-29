@@ -122,3 +122,44 @@ def format_sequential_name(prefix: str, number: int, width: int) -> str:
     """
     formatted_num = str(number).zfill(width)
     return f"{prefix}{formatted_num}"
+
+
+def get_folder_size(path: Path) -> int:
+    """Calculates total byte size of a directory recursively.
+
+    Args:
+        path: Path object to directory.
+
+    Returns:
+        int: Cumulative size in bytes.
+    """
+    total_size = 0
+    try:
+        for entry in path.rglob("*"):
+            if entry.is_file():
+                total_size += entry.stat().st_size
+    except Exception:
+        pass
+    return total_size
+
+
+def sort_folders(folders: list[Path], sort_order_str: str = "alphabetical") -> list[Path]:
+    """Sorts a list of folder paths based on requested sort order.
+
+    Args:
+        folders: List of Path objects.
+        sort_order_str: Sort order string key ('alphabetical', 'date_created', 'date_modified', 'folder_size').
+
+    Returns:
+        list[Path]: Sorted list of Path objects.
+    """
+    if sort_order_str == "date_created":
+        return sorted(folders, key=lambda p: p.stat().st_ctime if p.exists() else 0)
+    elif sort_order_str == "date_modified":
+        return sorted(folders, key=lambda p: p.stat().st_mtime if p.exists() else 0)
+    elif sort_order_str == "folder_size":
+        return sorted(folders, key=lambda p: get_folder_size(p), reverse=True)
+
+    # Default alphabetical
+    return sorted(folders, key=lambda p: p.name.lower())
+
