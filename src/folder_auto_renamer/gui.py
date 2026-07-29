@@ -26,8 +26,9 @@ class RenamerGUI(tk.Tk):
         super().__init__()
 
         self.title("Auto Folder Renamer Pro")
-        self.geometry("960 ... 720")
+        self.geometry("960x720")
         self.minsize(800, 600)
+
 
         self.config_data = RenamerConfig()
         self.dark_mode = False
@@ -526,7 +527,11 @@ class RenamerGUI(tk.Tk):
 def launch_gui() -> None:
     """Launches the Tkinter GUI mainloop."""
     app = RenamerGUI()
+    app.deiconify()
+    app.lift()
+    app.focus_force()
     app.mainloop()
+
 
 
 if __name__ == "__main__":
