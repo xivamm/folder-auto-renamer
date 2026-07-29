@@ -1,26 +1,14 @@
-"""Directory scanner for discovering and filtering target folders."""
-
+import fnmatch
 import os
 from pathlib import Path
 from typing import List
-
-from folder_auto_renamer.exceptions import (
-    DirectoryNotFoundError,
-    NotADirectoryError,
-    PermissionDeniedError,
-)
-from folder_auto_renamer.utils import is_hidden_folder
 
 
 class FolderScanner:
     """Scans filesystem directories and identifies valid target folders for renaming."""
 
     def __init__(self, target_path: Path) -> None:
-        """Initializes scanner with target directory path.
-
-        Args:
-            target_path: Directory path to scan.
-        """
+        """Initializes scanner with target directory path."""
         self.target_path = Path(target_path).resolve()
 
     def scan(
@@ -28,19 +16,17 @@ class FolderScanner:
         include_subfolders: bool = False,
         filter_empty_only: bool = False,
         filter_non_empty_only: bool = False,
+        filter_pattern: str = "",
         sort_order_str: str = "alphabetical",
     ) -> List[Path]:
-        """Scans for valid child directories inside target path.
+        """Scans for valid child directories inside target path."""
+        from folder_auto_renamer.exceptions import (
+            DirectoryNotFoundError,
+            NotADirectoryError,
+            PermissionDeniedError,
+        )
+        from folder_auto_renamer.utils import is_hidden_folder
 
-        Args:
-            include_subfolders: If True, scans subfolders recursively.
-            filter_empty_only: If True, includes only empty directories.
-            filter_non_empty_only: If True, includes only non-empty directories.
-            sort_order_str: Sorting criteria key.
-
-        Returns:
-            List[Path]: Sorted list of valid child directory paths.
-        """
         if not self.target_path.exists():
             raise DirectoryNotFoundError(
                 f"Directory does not exist: '{self.target_path}'"
@@ -62,7 +48,7 @@ class FolderScanner:
                         if is_hidden_folder(dir_path):
                             dirs.remove(d)
                             continue
-                        if self._passes_filter(dir_path, filter_empty_only, filter_non_empty_only):
+                        if self._passes_filter(dir_path, filter_empty_only, filter_non_empty_only, filter_pattern):
                             valid_folders.append(dir_path)
             except PermissionError as err:
                 raise PermissionDeniedError(
@@ -82,7 +68,7 @@ class FolderScanner:
                         if entry.is_dir(follow_symlinks=False):
                             entry_path = Path(entry.path)
                             if not is_hidden_folder(entry_path):
-                                if self._passes_filter(entry_path, filter_empty_only, filter_non_empty_only):
+                                if self._passes_filter(entry_path, filter_empty_only, filter_non_empty_only, filter_pattern):
                                     valid_folders.append(entry_path)
                     except PermissionError:
                         continue
@@ -91,9 +77,14 @@ class FolderScanner:
         return sort_folders(valid_folders, sort_order_str)
 
     def _passes_filter(
-        self, path: Path, empty_only: bool, non_empty_only: bool
+        self, path: Path, empty_only: bool, non_empty_only: bool, filter_pattern: str = ""
     ) -> bool:
-        """Helper to filter empty or non-empty directories."""
+        """Helper to filter empty or non-empty directories and wildcard patterns."""
+        if filter_pattern and filter_pattern.strip():
+            pat = filter_pattern.strip()
+            if not fnmatch.fnmatch(path.name.lower(), pat.lower()):
+                return False
+
         if not empty_only and not non_empty_only:
             return True
 
@@ -107,4 +98,5 @@ class FolderScanner:
             pass
 
         return True
+
 

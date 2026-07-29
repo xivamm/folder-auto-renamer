@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-29
+
+### Added
+- **Regex Search & Replace Mode**: Advanced regular expression pattern matching and capture group substitution.
+- **Regex Template Presets**: 1-click preset buttons for removing numbers, formatting date prefixes, and sanitizing slugs.
+- **Creation/Modification Date Injection Mode**: Prepend or append folder Creation or Modification timestamps.
+- **Pattern Subfolder Filtering**: Filter target directories using wildcard (`*2026*`) patterns.
+- **Windows File Explorer Context Menu Integration**: 1-click registration of "Open in Auto Folder Renamer Pro" in Explorer right-click context menu.
+- **GitHub Star / Fork Header Buttons**: Direct header link button to repository.
+- **GitHub Actions CI/CD Pipeline (`.github/workflows/ci.yml`)**: Automated cross-Python unit testing and executable asset build releases.
+- **Shields.io Repository Badges**: Added build status, license, python version, and zero-dependency badges to `README.md`.
+- **Unit Test Expansion**: Added `tests/test_regex_date.py` covering Regex replace, Date injection, and wildcard folder filtering.
+
 ## [1.1.0] - 2026-07-29
+
 
 ### Added
 - Native Tkinter Desktop GUI (`gui.py`) with zero third-party dependencies.

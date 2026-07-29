@@ -18,6 +18,8 @@ from folder_auto_renamer.renamer import FolderRenamer
 from folder_auto_renamer.undo import UndoManager
 
 
+import webbrowser
+
 class RenamerGUI(tk.Tk):
     """Main desktop application window for Auto Folder Renamer Pro."""
 
@@ -26,9 +28,8 @@ class RenamerGUI(tk.Tk):
         super().__init__()
 
         self.title("Auto Folder Renamer Pro")
-        self.geometry("960x720")
-        self.minsize(800, 600)
-
+        self.geometry("980x740")
+        self.minsize(820, 620)
 
         self.config_data = RenamerConfig()
         self.dark_mode = False
@@ -85,7 +86,16 @@ class RenamerGUI(tk.Tk):
         title_label = ttk.Label(header_frame, text="Auto Folder Renamer Pro", style="Header.TLabel")
         title_label.pack(side=tk.LEFT)
 
-        theme_btn = ttk.Button(header_frame, text="Toggle Dark/Light Mode", command=self._toggle_theme)
+        header_btn_box = ttk.Frame(header_frame)
+        header_btn_box.pack(side=tk.RIGHT)
+
+        github_btn = ttk.Button(header_btn_box, text="⭐ Star / Fork on GitHub", command=lambda: webbrowser.open("https://github.com/xivamm/folder-auto-renamer"))
+        github_btn.pack(side=tk.LEFT, padx=(0, 6))
+
+        ctx_menu_btn = ttk.Button(header_btn_box, text="Register Context Menu", command=self._register_context_menu)
+        ctx_menu_btn.pack(side=tk.LEFT, padx=(0, 6))
+
+        theme_btn = ttk.Button(header_btn_box, text="Toggle Dark/Light Mode", command=self._toggle_theme)
         theme_btn.pack(side=tk.RIGHT)
 
         # Folder Selection Bar
@@ -127,6 +137,8 @@ class RenamerGUI(tk.Tk):
         mode_choices = [
             ("Sequential", RenameMode.SEQUENTIAL.value),
             ("Replace Text", RenameMode.REPLACE_TEXT.value),
+            ("Regex Replace", RenameMode.REGEX_REPLACE.value),
+            ("Date Stamp", RenameMode.INJECT_DATE.value),
             ("Add Prefix", RenameMode.ADD_PREFIX.value),
             ("Add Suffix", RenameMode.ADD_SUFFIX.value),
             ("Uppercase", RenameMode.UPPERCASE.value),
@@ -141,6 +153,7 @@ class RenamerGUI(tk.Tk):
         self.mode_combo.current(0)
         self.mode_combo.pack(side=tk.LEFT)
         self.mode_combo.bind("<<ComboboxSelected>>", self._on_mode_changed)
+
 
         # Dynamic Controls Frame
         self.dynamic_frame = ttk.Frame(options_card)
@@ -271,11 +284,72 @@ class RenamerGUI(tk.Tk):
             self.replace_entry.grid(row=0, column=3, padx=4, pady=2)
             self.replace_entry.bind("<KeyRelease>", lambda e: self.update_preview())
 
+        elif mode_name == "Regex Replace":
+            ttk.Label(self.dynamic_frame, text="Regex Pattern:").grid(row=0, column=0, sticky=tk.W, padx=4, pady=2)
+            self.regex_pat_entry = ttk.Entry(self.dynamic_frame, width=20)
+            self.regex_pat_entry.insert(0, r"^\d+[-_\s]*")
+            self.regex_pat_entry.grid(row=0, column=1, padx=4, pady=2)
+            self.regex_pat_entry.bind("<KeyRelease>", lambda e: self.update_preview())
+
+            ttk.Label(self.dynamic_frame, text="Replacement:").grid(row=0, column=2, sticky=tk.W, padx=4, pady=2)
+            self.regex_rep_entry = ttk.Entry(self.dynamic_frame, width=18)
+            self.regex_rep_entry.grid(row=0, column=3, padx=4, pady=2)
+            self.regex_rep_entry.bind("<KeyRelease>", lambda e: self.update_preview())
+
+            regex_tpl_box = ttk.Frame(self.dynamic_frame)
+            regex_tpl_box.grid(row=0, column=4, columnspan=2, padx=4, pady=2)
+
+            ttk.Button(regex_tpl_box, text="Remove Numbers", command=lambda: self._apply_regex_preset(r"^\d+[-_\s]*", "")).pack(side=tk.LEFT, padx=2)
+            ttk.Button(regex_tpl_box, text="Sanitize Slug", command=lambda: self._apply_regex_preset(r"[^\w\s-]", "")).pack(side=tk.LEFT, padx=2)
+
+        elif mode_name == "Date Stamp":
+            ttk.Label(self.dynamic_frame, text="Date Format:").grid(row=0, column=0, sticky=tk.W, padx=4, pady=2)
+            self.date_format_combo = ttk.Combobox(self.dynamic_frame, values=["%Y-%m-%d", "%Y%m%d", "%Y-%m", "%d-%m-%Y"], state="readonly", width=14)
+            self.date_format_combo.current(0)
+            self.date_format_combo.grid(row=0, column=1, padx=4, pady=2)
+            self.date_format_combo.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
+
+            ttk.Label(self.dynamic_frame, text="Date Type:").grid(row=0, column=2, sticky=tk.W, padx=4, pady=2)
+            self.date_type_combo = ttk.Combobox(self.dynamic_frame, values=["Modified Date", "Creation Date"], state="readonly", width=14)
+            self.date_type_combo.current(0)
+            self.date_type_combo.grid(row=0, column=3, padx=4, pady=2)
+            self.date_type_combo.bind("<<ComboboxSelected>>", lambda e: self.update_preview())
+
         elif mode_name in ("Add Prefix", "Add Suffix"):
             ttk.Label(self.dynamic_frame, text="Text String:").grid(row=0, column=0, sticky=tk.W, padx=4, pady=2)
             self.affix_entry = ttk.Entry(self.dynamic_frame, width=24)
             self.affix_entry.grid(row=0, column=1, padx=4, pady=2)
             self.affix_entry.bind("<KeyRelease>", lambda e: self.update_preview())
+
+    def _apply_regex_preset(self, pattern: str, replacement: str) -> None:
+        """Applies predefined regex pattern preset."""
+        if hasattr(self, "regex_pat_entry") and hasattr(self, "regex_rep_entry"):
+            self.regex_pat_entry.delete(0, tk.END)
+            self.regex_pat_entry.insert(0, pattern)
+            self.regex_rep_entry.delete(0, tk.END)
+            self.regex_rep_entry.insert(0, replacement)
+            self.update_preview()
+
+    def _register_context_menu(self) -> None:
+        """Registers Windows File Explorer right-click context menu entry."""
+        if sys.platform != "win32":
+            messagebox.showinfo("Info", "Context Menu integration is supported on Windows systems.")
+            return
+
+        try:
+            import winreg
+            exe_path = sys.executable if getattr(sys, 'frozen', False) else f'"{sys.executable}" "{os.path.abspath(sys.argv[0])}"'
+            key_path = r"Directory\Background\shell\AutoFolderRenamer"
+            
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, key_path) as key:
+                winreg.SetValue(key, "", winreg.REG_SZ, "Open with Auto Folder Renamer Pro")
+                winreg.SetValueEx(key, "Icon", 0, winreg.REG_SZ, sys.executable)
+                with winreg.CreateKey(key, "command") as cmd_key:
+                    winreg.SetValue(cmd_key, "", winreg.REG_SZ, f'{exe_path} "%V"')
+
+            messagebox.showinfo("Success", "Windows Explorer Context Menu registered successfully!\nRight-click inside any folder to open Auto Folder Renamer Pro.")
+        except Exception as err:
+            messagebox.showerror("Error", f"Failed to register context menu: {err}")
 
     def _on_mode_changed(self, event=None) -> None:
         """Handles rename mode combo change."""
@@ -323,6 +397,8 @@ class RenamerGUI(tk.Tk):
         mode_map = {
             "Sequential": RenameMode.SEQUENTIAL,
             "Replace Text": RenameMode.REPLACE_TEXT,
+            "Regex Replace": RenameMode.REGEX_REPLACE,
+            "Date Stamp": RenameMode.INJECT_DATE,
             "Add Prefix": RenameMode.ADD_PREFIX,
             "Add Suffix": RenameMode.ADD_SUFFIX,
             "Uppercase": RenameMode.UPPERCASE,
@@ -339,6 +415,10 @@ class RenamerGUI(tk.Tk):
         suffix = ""
         find_text = ""
         replace_text = ""
+        regex_pattern = ""
+        regex_replacement = ""
+        date_format = "%Y-%m-%d"
+        date_type = "modified"
         start = 1
         padding = 3
 
@@ -352,10 +432,17 @@ class RenamerGUI(tk.Tk):
         elif mode == RenameMode.REPLACE_TEXT:
             find_text = getattr(self, "find_entry", None).get() if hasattr(self, "find_entry") else ""
             replace_text = getattr(self, "replace_entry", None).get() if hasattr(self, "replace_entry") else ""
+        elif mode == RenameMode.REGEX_REPLACE:
+            regex_pattern = getattr(self, "regex_pat_entry", None).get() if hasattr(self, "regex_pat_entry") else ""
+            regex_replacement = getattr(self, "regex_rep_entry", None).get() if hasattr(self, "regex_rep_entry") else ""
+        elif mode == RenameMode.INJECT_DATE:
+            date_format = getattr(self, "date_format_combo", None).get() if hasattr(self, "date_format_combo") else "%Y-%m-%d"
+            date_type = "created" if (hasattr(self, "date_type_combo") and self.date_type_combo.get() == "Creation Date") else "modified"
         elif mode == RenameMode.ADD_PREFIX:
             prefix = getattr(self, "affix_entry", None).get() if hasattr(self, "affix_entry") else ""
         elif mode == RenameMode.ADD_SUFFIX:
             suffix = getattr(self, "affix_entry", None).get() if hasattr(self, "affix_entry") else ""
+
 
         sort_map = {
             "Alphabetical": SortOrder.ALPHABETICAL,
@@ -376,6 +463,10 @@ class RenamerGUI(tk.Tk):
             suffix=suffix,
             find_text=find_text,
             replace_text=replace_text,
+            regex_pattern=regex_pattern,
+            regex_replacement=regex_replacement,
+            date_format=date_format,
+            date_type=date_type,
             start=start,
             min_zero_padding=padding,
             include_subfolders=self.subfolder_var.get(),
@@ -383,6 +474,7 @@ class RenamerGUI(tk.Tk):
             sort_order=sort_map.get(self.sort_combo.get(), SortOrder.ALPHABETICAL),
             duplicate_strategy=dup_map.get(self.dup_combo.get(), DuplicateStrategy.SKIP),
         )
+
 
     def update_preview(self) -> None:
         """Refreshes live preview table based on active controls."""

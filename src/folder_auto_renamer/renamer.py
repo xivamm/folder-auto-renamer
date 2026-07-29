@@ -45,6 +45,7 @@ class FolderRenamer:
             include_subfolders=self.config.include_subfolders,
             filter_empty_only=self.config.filter_empty_only,
             filter_non_empty_only=self.config.filter_non_empty_only,
+            filter_pattern=self.config.filter_pattern,
             sort_order_str=self.config.sort_order.value,
         )
 
@@ -58,7 +59,10 @@ class FolderRenamer:
         for idx, folder_path in enumerate(folders):
             parent_dir = folder_path.parent
             old_name = folder_path.name
-            proposed_name = transform_name(old_name, idx, total_count, self.config)
+            proposed_name = transform_name(
+                old_name, idx, total_count, self.config, folder_path=folder_path
+            )
+
 
             status = "Ready"
             conflict = False
@@ -113,6 +117,7 @@ class FolderRenamer:
             include_subfolders=self.config.include_subfolders,
             filter_empty_only=self.config.filter_empty_only,
             filter_non_empty_only=self.config.filter_non_empty_only,
+            filter_pattern=self.config.filter_pattern,
             sort_order_str=self.config.sort_order.value,
         )
 
@@ -140,7 +145,10 @@ class FolderRenamer:
         for idx, folder_path in enumerate(folders):
             parent_dir = folder_path.parent
             old_name = folder_path.name
-            new_name = transform_name(old_name, idx, total_count, self.config)
+            new_name = transform_name(
+                old_name, idx, total_count, self.config, folder_path=folder_path
+            )
+
             target_path = parent_dir / new_name
 
             status = progress.update(1)

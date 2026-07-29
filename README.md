@@ -1,33 +1,44 @@
 # Auto Folder Renamer Pro
 
-> Rename hundreds of folders in seconds — no coding required.
+[![Build Status](https://github.com/xivamm/folder-auto-renamer/actions/workflows/ci.yml/badge.svg)](https://github.com/xivamm/folder-auto-renamer/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
+[![Zero Dependencies](https://img.shields.io/badge/dependencies-0%20external-brightgreen.svg)](README.md)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](README.md)
 
-`Auto Folder Renamer Pro` is a professional desktop application and Windows command-line utility built entirely with Python 3.11+ and standard library (`tkinter`, `ttk`). It automatically scans subdirectories and renames them using customizable modes, live previewing, zero-padding, collision safety checks, dark mode support, presets, and persistent undo history.
+> Rename hundreds of folders in seconds — no coding required. Standalone One-Click Executable & Open-Source Python Utility.
+
+`Auto Folder Renamer Pro` is a professional desktop application and Windows command-line utility built entirely with Python 3.11+ and standard library (`tkinter`, `ttk`). It automatically scans subdirectories and renames them using customizable modes (including Regex Search/Replace and Creation/Modification Date Stamps), live previewing, zero-padding, collision safety checks, dark mode support, presets, and persistent undo history.
 
 ---
 
-## Key Features
+## 🚀 Key Features
 
 - **Desktop GUI & CLI Dual Execution**: Run as a graphical Tkinter desktop app (`folder-auto-renamer --gui`) or headlessly via command-line interface.
-- **10 Advanced Renaming Modes**:
+- **12 Advanced Renaming Modes**:
   1. **Sequential**: `Project-001`, `Project-002`
   2. **Replace Text**: Swap specific text substrings (e.g. `Vacation -> Trip`)
-  3. **Add Prefix**: Prepend custom string (e.g. `2026_`)
-  4. **Add Suffix**: Append custom string (e.g. `_Backup`)
-  5. **Uppercase**: `MY_FOLDER`
-  6. **Lowercase**: `my_folder`
-  7. **Title Case**: `My Folder Name`
-  8. **Remove Spaces**: `MyFolderName`
-  9. **Replace Spaces with Underscore**: `My_Folder_Name`
-  10. **Clean Special Characters**: Remove non-alphanumeric special characters.
-- **Live Preview Table**: Interactive `Treeview` displaying current folder name vs proposed new name, with status indicators highlighting duplicate conflicts.
+  3. **Regex Search & Replace**: Capture groups and pattern matching (e.g. `^(\d{4})-(\d{2})` -> `\2_\1`)
+  4. **Date Stamp Injection**: Prepend/append folder Creation or Modification Dates (e.g. `2026-07-29_MyFolder`)
+  5. **Add Prefix**: Prepend custom string (e.g. `2026_`)
+  6. **Add Suffix**: Append custom string (e.g. `_Backup`)
+  7. **Uppercase**: `MY_FOLDER`
+  8. **Lowercase**: `my_folder`
+  9. **Title Case**: `My Folder Name`
+  10. **Remove Spaces**: `MyFolderName`
+  11. **Replace Spaces with Underscore**: `My_Folder_Name`
+  12. **Clean Special Characters**: Remove non-alphanumeric special characters.
+- **Windows Explorer Right-Click Integration**: 1-click button to register "Open in Auto Folder Renamer Pro" directly into Windows File Explorer's right-click context menu.
+- **Regex Preset Templates**: Built-in 1-click templates for quick Regex operations (Remove Numbers, Format Dates, Sanitize Slugs).
+- **Live Preview Table**: Interactive `Treeview` displaying current folder name vs proposed new name, with color-coded collision indicators.
 - **One-Click Naming Presets**: Quick-apply preset configurations for Camera Photos (`IMG-`), YouTube Projects (`Video-`), School Files (`Class-`), Client Projects (`Client-`), and Documents (`Doc-`).
 - **Dark & Light Mode Support**: Instant theme toggle for comfortable viewing.
 - **Auto-Indexing Duplicate Protection**: Resolve existing folder collisions automatically with index suffixes (e.g. `Project (1)`).
-- **Sorting & Filtering Options**: Sort folders by Name, Date Created, Date Modified, or Folder Size. Include or exclude subfolders and hidden system directories.
+- **Sorting & Pattern Filtering**: Sort folders by Name, Date Created, Date Modified, or Folder Size. Filter target subfolders using wildcards (`*2026*`).
 - **CSV History Export**: Export undo history logs to CSV spreadsheet files.
 - **Persistent Settings**: Saves last-used directory and UI preferences to `~/.folder_auto_renamer_gui_settings.json`.
-- **Zero Third-Party Dependencies**: Pure Python Standard Library implementation (`tkinter`, `ttk`, `json`, `csv`, `pathlib`).
+- **Zero Third-Party Dependencies**: Pure Python Standard Library implementation (`tkinter`, `ttk`, `re`, `datetime`, `json`, `csv`, `pathlib`).
+
 
 
 ---

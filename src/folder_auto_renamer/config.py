@@ -18,6 +18,8 @@ class RenameMode(Enum):
     REMOVE_SPACES = "remove_spaces"
     REPLACE_SPACES_UNDERSCORE = "replace_spaces_underscore"
     REMOVE_SPECIAL_CHARS = "remove_special_chars"
+    REGEX_REPLACE = "regex_replace"
+    INJECT_DATE = "inject_date"
 
 
 class SortOrder(Enum):
@@ -44,6 +46,11 @@ class RenamerConfig:
     suffix: str = ""
     find_text: str = ""
     replace_text: str = ""
+    regex_pattern: str = ""
+    regex_replacement: str = ""
+    date_format: str = "%Y-%m-%d"  # e.g., 2026-07-29
+    date_type: str = "modified"  # 'modified' or 'created'
+    filter_pattern: str = ""  # Wildcard/Regex filter for subfolders
     start: int = 1
     min_zero_padding: int = 3
     dry_run: bool = False
@@ -58,6 +65,7 @@ class RenamerConfig:
     filter_non_empty_only: bool = False
     sort_order: SortOrder = SortOrder.ALPHABETICAL
     duplicate_strategy: DuplicateStrategy = DuplicateStrategy.SKIP
+
 
     # File paths
     log_file: Path = Path("logs/folder-auto-renamer.log")
