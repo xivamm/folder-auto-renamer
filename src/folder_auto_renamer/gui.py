@@ -404,12 +404,13 @@ class RenamerGUI(tk.Tk):
         except Exception as err:
             self.status_var.set(f"Error generating preview: {err}")
 
-    def _filter_treeview() -> None:
+    def _filter_treeview(self, event=None) -> None:
         """Filters treeview rows based on search box input."""
         query = self.search_entry.get().strip().lower()
         if not query:
             self._render_treeview(self.preview_data)
             return
+
 
         filtered = [
             item for item in self.preview_data
