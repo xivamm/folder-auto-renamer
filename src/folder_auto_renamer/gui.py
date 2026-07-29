@@ -261,9 +261,9 @@ class RenamerGUI(tk.Tk):
         status_bar.pack(fill=tk.X)
 
         self._render_dynamic_controls()
-()
 
     def _render_dynamic_controls(self) -> None:
+
         """Renders mode-specific inputs in dynamic options frame."""
         for child in self.dynamic_frame.winfo_children():
             child.destroy()
@@ -363,7 +363,12 @@ class RenamerGUI(tk.Tk):
                 with winreg.CreateKey(key, "command") as cmd_key:
                     winreg.SetValue(cmd_key, "", winreg.REG_SZ, f'{exe_path} "%V"')
 
+            messagebox.showinfo("Success", "Windows Explorer Context Menu registered successfully!\nRight-click inside any folder to open Auto Folder Renamer Pro.")
+        except Exception as err:
+            messagebox.showerror("Error", f"Failed to register context menu: {err}")
+
     def _on_mode_changed(self, event=None) -> None:
+
         """Handles rename mode combo change."""
         self._render_dynamic_controls()
         self.update_preview()
