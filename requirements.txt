@@ -1,0 +1,2 @@
+# Zero third-party dependencies required.
+# folder-auto-renamer uses Python standard library exclusively.
