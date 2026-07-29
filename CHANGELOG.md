@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-29
+
+### Added
+- **Smart File & Folder Declutter Engine (`organizer.py`)**: Automatically sort loose files into categorized folders (`Images`, `Documents`, `Videos`, `Audio`, `Archives`, `Code & Data`, `Executables`).
+- **File Extension & Date Organizer Modes**: Sort files into extension-based folders (`.PNG`, `.PDF`) or year/month date structures (`2026/07-July/`).
+- **Empty Subfolder Cleaner (`cleaner.py`)**: 1-click scanning and safe removal of empty directories tree-wide.
+- **Dual Tool Mode Switcher (`gui.py`)**: Radio button switch allowing users to toggle seamlessly between **📁 Rename Folders** and **🧹 Declutter & Organize Files**.
+- **1-Click "Clean Downloads / Desktop" Presets**: Instant preset buttons to clean messy Downloads and Desktop folders.
+- **CLI Options Expansion**: Added `--organize [category|extension|date]` and `--clean-empty` command line flags.
+- **Unit Test Suite Expansion (`tests/test_organizer.py`)**: Full unit tests covering file categorizer, extension sorter, date organizer, and empty folder cleaner.
+
 ## [1.2.0] - 2026-07-29
+
 
 ### Added
 - **Regex Search & Replace Mode**: Advanced regular expression pattern matching and capture group substitution.

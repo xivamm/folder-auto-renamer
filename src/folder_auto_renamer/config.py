@@ -6,6 +6,12 @@ from pathlib import Path
 from typing import Optional
 
 
+class TargetType(Enum):
+    """Target mode: rename folders or declutter/organize files."""
+    FOLDERS = "folders"
+    FILES = "files"
+
+
 class RenameMode(Enum):
     """Supported folder renaming modes."""
     SEQUENTIAL = "sequential"
@@ -41,7 +47,10 @@ class RenamerConfig:
     """Holds operational configuration options for folder auto-renamer."""
 
     target_path: Optional[Path] = None
+    target_type: TargetType = TargetType.FOLDERS
     mode: RenameMode = RenameMode.SEQUENTIAL
+    organizer_mode: str = "category"  # 'category', 'extension', 'date'
+    clean_empty_folders: bool = False
     prefix: str = "Project-"
     suffix: str = ""
     find_text: str = ""
@@ -57,6 +66,7 @@ class RenamerConfig:
     undo: bool = False
     verbose: bool = False
     gui_mode: bool = False
+
 
     # Filters and Options
     include_subfolders: bool = False

@@ -96,7 +96,18 @@ class RenamerGUI(tk.Tk):
         ctx_menu_btn.pack(side=tk.LEFT, padx=(0, 6))
 
         theme_btn = ttk.Button(header_btn_box, text="Toggle Dark/Light Mode", command=self._toggle_theme)
-        theme_btn.pack(side=tk.RIGHT)
+        theme_btn.pack(side=tk.RIGHT)        # Target Tool Switch (Folder Renamer vs File Declutter)
+        tool_switch_frame = ttk.Frame(main_container)
+        tool_switch_frame.pack(fill=tk.X, pady=(0, 8))
+
+        ttk.Label(tool_switch_frame, text="Active Tool:", style="CardHeader.TLabel").pack(side=tk.LEFT, padx=(0, 8))
+        self.target_tool_var = tk.StringVar(value="folders")
+
+        folders_radio = ttk.Radiobutton(tool_switch_frame, text="📁 Rename Folders", value="folders", variable=self.target_tool_var, command=self._on_tool_changed)
+        folders_radio.pack(side=tk.LEFT, padx=(0, 12))
+
+        organize_radio = ttk.Radiobutton(tool_switch_frame, text="🧹 Declutter & Organize Files", value="organize_files", variable=self.target_tool_var, command=self._on_tool_changed)
+        organize_radio.pack(side=tk.LEFT)
 
         # Folder Selection Bar
         folder_card = ttk.Frame(main_container, style="Card.TFrame", padding=10)
@@ -122,7 +133,8 @@ class RenamerGUI(tk.Tk):
         ttk.Button(preset_frame, text="YouTube Projects", command=lambda: self._apply_preset("youtube")).pack(side=tk.LEFT, padx=2)
         ttk.Button(preset_frame, text="School Files", command=lambda: self._apply_preset("school")).pack(side=tk.LEFT, padx=2)
         ttk.Button(preset_frame, text="Client Projects", command=lambda: self._apply_preset("client")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(preset_frame, text="Documents", command=lambda: self._apply_preset("docs")).pack(side=tk.LEFT, padx=2)
+        ttk.Button(preset_frame, text="Clean Downloads", command=lambda: self._apply_preset("clean_downloads")).pack(side=tk.LEFT, padx=2)
+        ttk.Button(preset_frame, text="Clean Desktop", command=lambda: self._apply_preset("clean_desktop")).pack(side=tk.LEFT, padx=2)
 
         # Options Grid Frame
         options_card = ttk.Frame(main_container, style="Card.TFrame", padding=10)
@@ -132,7 +144,8 @@ class RenamerGUI(tk.Tk):
         mode_box = ttk.Frame(options_card)
         mode_box.pack(fill=tk.X, pady=(0, 8))
 
-        ttk.Label(mode_box, text="Rename Mode:", style="CardHeader.TLabel").pack(side=tk.LEFT, padx=(0, 8))
+        self.mode_label = ttk.Label(mode_box, text="Rename Mode:", style="CardHeader.TLabel")
+        self.mode_label.pack(side=tk.LEFT, padx=(0, 8))
         self.mode_var = tk.StringVar(value=RenameMode.SEQUENTIAL.value)
         mode_choices = [
             ("Sequential", RenameMode.SEQUENTIAL.value),
@@ -153,7 +166,6 @@ class RenamerGUI(tk.Tk):
         self.mode_combo.current(0)
         self.mode_combo.pack(side=tk.LEFT)
         self.mode_combo.bind("<<ComboboxSelected>>", self._on_mode_changed)
-
 
         # Dynamic Controls Frame
         self.dynamic_frame = ttk.Frame(options_card)
@@ -202,8 +214,8 @@ class RenamerGUI(tk.Tk):
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", selectmode="extended")
 
         self.tree.heading("status", text="Status")
-        self.tree.heading("old_name", text="Current Folder Name")
-        self.tree.heading("new_name", text="Proposed New Name")
+        self.tree.heading("old_name", text="Current Item Name")
+        self.tree.heading("new_name", text="Proposed Target / Folder")
         self.tree.heading("conflict", text="Conflict")
 
         self.tree.column("status", width=120, anchor=tk.CENTER)
@@ -228,8 +240,11 @@ class RenamerGUI(tk.Tk):
         self.preview_btn = ttk.Button(action_bar, text="Refresh Preview", command=self.update_preview)
         self.preview_btn.pack(side=tk.LEFT, padx=(0, 6))
 
-        self.rename_btn = ttk.Button(action_bar, text="Execute Rename", style="Primary.TButton", command=self._execute_rename)
+        self.rename_btn = ttk.Button(action_bar, text="Execute Action", style="Primary.TButton", command=self._execute_rename)
         self.rename_btn.pack(side=tk.LEFT, padx=(0, 6))
+
+        self.clean_empty_btn = ttk.Button(action_bar, text="Clean Empty Folders", command=self._clean_empty_folders)
+        self.clean_empty_btn.pack(side=tk.LEFT, padx=(0, 6))
 
         self.undo_btn = ttk.Button(action_bar, text="Undo Last Session", command=self._execute_undo)
         self.undo_btn.pack(side=tk.LEFT, padx=(0, 6))
@@ -246,6 +261,7 @@ class RenamerGUI(tk.Tk):
         status_bar.pack(fill=tk.X)
 
         self._render_dynamic_controls()
+()
 
     def _render_dynamic_controls(self) -> None:
         """Renders mode-specific inputs in dynamic options frame."""
@@ -347,10 +363,6 @@ class RenamerGUI(tk.Tk):
                 with winreg.CreateKey(key, "command") as cmd_key:
                     winreg.SetValue(cmd_key, "", winreg.REG_SZ, f'{exe_path} "%V"')
 
-            messagebox.showinfo("Success", "Windows Explorer Context Menu registered successfully!\nRight-click inside any folder to open Auto Folder Renamer Pro.")
-        except Exception as err:
-            messagebox.showerror("Error", f"Failed to register context menu: {err}")
-
     def _on_mode_changed(self, event=None) -> None:
         """Handles rename mode combo change."""
         self._render_dynamic_controls()
@@ -363,29 +375,6 @@ class RenamerGUI(tk.Tk):
             self.path_entry.delete(0, tk.END)
             self.path_entry.insert(0, selected)
             self.update_preview()
-
-    def _apply_preset(self, preset_name: str) -> None:
-        """Applies predefined naming presets."""
-        self.mode_combo.current(0)  # Sequential
-        self._render_dynamic_controls()
-
-        if preset_name == "photos":
-            self.prefix_entry.delete(0, tk.END)
-            self.prefix_entry.insert(0, "IMG-")
-        elif preset_name == "youtube":
-            self.prefix_entry.delete(0, tk.END)
-            self.prefix_entry.insert(0, "Video-")
-        elif preset_name == "school":
-            self.prefix_entry.delete(0, tk.END)
-            self.prefix_entry.insert(0, "Class-")
-        elif preset_name == "client":
-            self.prefix_entry.delete(0, tk.END)
-            self.prefix_entry.insert(0, "Client-")
-        elif preset_name == "docs":
-            self.prefix_entry.delete(0, tk.END)
-            self.prefix_entry.insert(0, "Doc-")
-
-        self.update_preview()
 
     def _get_current_config(self) -> Optional[RenamerConfig]:
         """Constructs RenamerConfig from GUI input values."""
@@ -443,7 +432,6 @@ class RenamerGUI(tk.Tk):
         elif mode == RenameMode.ADD_SUFFIX:
             suffix = getattr(self, "affix_entry", None).get() if hasattr(self, "affix_entry") else ""
 
-
         sort_map = {
             "Alphabetical": SortOrder.ALPHABETICAL,
             "Creation Date": SortOrder.DATE_CREATED,
@@ -475,9 +463,58 @@ class RenamerGUI(tk.Tk):
             duplicate_strategy=dup_map.get(self.dup_combo.get(), DuplicateStrategy.SKIP),
         )
 
+    def _on_tool_changed(self) -> None:
+
+        """Handles switching between Folder Renamer and File Declutter tool modes."""
+        active_tool = self.target_tool_var.get()
+        if active_tool == "organize_files":
+            self.mode_label.config(text="Organize By:")
+            self.mode_combo.config(values=["File Category (Images, Docs)", "File Extension (.PNG, .PDF)", "Date (Year/Month)"])
+            self.mode_combo.current(0)
+            self.rename_btn.config(text="Execute File Declutter")
+        else:
+            self.mode_label.config(text="Rename Mode:")
+            mode_choices = ["Sequential", "Replace Text", "Regex Replace", "Date Stamp", "Add Prefix", "Add Suffix", "Uppercase", "Lowercase", "Title Case", "Remove Spaces", "Replace Spaces (_)", "Clean Special Chars"]
+            self.mode_combo.config(values=mode_choices)
+            self.mode_combo.current(0)
+            self.rename_btn.config(text="Execute Folder Rename")
+
+        self._render_dynamic_controls()
+        self.update_preview()
+
+    def _apply_preset(self, preset_name: str) -> None:
+        """Applies predefined naming or decluttering presets."""
+        if preset_name in ("clean_downloads", "clean_desktop"):
+            self.target_tool_var.set("organize_files")
+            self._on_tool_changed()
+            target_dir = Path.home() / ("Downloads" if preset_name == "clean_downloads" else "Desktop")
+            self.path_entry.delete(0, tk.END)
+            self.path_entry.insert(0, str(target_dir))
+            self.update_preview()
+            return
+
+        self.target_tool_var.set("folders")
+        self._on_tool_changed()
+        self.mode_combo.current(0)  # Sequential
+        self._render_dynamic_controls()
+
+        if preset_name == "photos":
+            self.prefix_entry.delete(0, tk.END)
+            self.prefix_entry.insert(0, "IMG-")
+        elif preset_name == "youtube":
+            self.prefix_entry.delete(0, tk.END)
+            self.prefix_entry.insert(0, "Video-")
+        elif preset_name == "school":
+            self.prefix_entry.delete(0, tk.END)
+            self.prefix_entry.insert(0, "Class-")
+        elif preset_name == "client":
+            self.prefix_entry.delete(0, tk.END)
+            self.prefix_entry.insert(0, "Client-")
+
+        self.update_preview()
 
     def update_preview(self) -> None:
-        """Refreshes live preview table based on active controls."""
+        """Refreshes live preview table based on active controls and tool mode."""
         config = self._get_current_config()
         if not config or not config.target_path.exists():
             self.preview_data = []
@@ -486,15 +523,110 @@ class RenamerGUI(tk.Tk):
             return
 
         try:
-            renamer = FolderRenamer(config)
-            self.preview_data = renamer.generate_preview()
-            self._filter_treeview()
+            if self.target_tool_var.get() == "organize_files":
+                from folder_auto_renamer.organizer import FileOrganizer
+                organizer = FileOrganizer(config.target_path)
+                mode_val = "category"
+                combo_str = self.mode_combo.get()
+                if "Extension" in combo_str:
+                    mode_val = "extension"
+                elif "Date" in combo_str:
+                    mode_val = "date"
 
-            count = len(self.preview_data)
-            conflicts = sum(1 for item in self.preview_data if item.get("conflict") == "Yes")
-            self.status_var.set(f"Found {count} folder(s). Conflicts: {conflicts}")
+                rows = organizer.generate_organize_preview(mode=mode_val, include_subfolders=self.subfolder_var.get())
+                self.preview_data = [
+                    {
+                        "status": r["status"],
+                        "old_name": r["file_name"],
+                        "new_name": f"📁 {r['proposed_folder']}",
+                        "conflict": "No",
+                        "old_path": r["current_path"],
+                        "new_path": r["proposed_path"],
+                    }
+                    for r in rows
+                ]
+                self._filter_treeview()
+                count = len(self.preview_data)
+                self.status_var.set(f"Found {count} file(s) ready to organize into folders.")
+            else:
+                renamer = FolderRenamer(config)
+                self.preview_data = renamer.generate_preview()
+                self._filter_treeview()
+
+                count = len(self.preview_data)
+                conflicts = sum(1 for item in self.preview_data if item.get("conflict") == "Yes")
+                self.status_var.set(f"Found {count} folder(s). Conflicts: {conflicts}")
         except Exception as err:
             self.status_var.set(f"Error generating preview: {err}")
+
+    def _execute_rename(self) -> None:
+        """Executes folder rename or file organization."""
+        config = self._get_current_config()
+        if not config or not config.target_path.exists():
+            messagebox.showwarning("Warning", "Please select a valid target directory.")
+            return
+
+        if not self.preview_data:
+            messagebox.showinfo("Info", "No items to process.")
+            return
+
+        if self.target_tool_var.get() == "organize_files":
+            confirm = messagebox.askyesno(
+                "Confirm Declutter",
+                f"Organize {len(self.preview_data)} file(s) into categorized subfolders?\n\nTarget: {config.target_path}",
+            )
+            if not confirm:
+                return
+
+            from folder_auto_renamer.organizer import FileOrganizer
+            organizer = FileOrganizer(config.target_path)
+            mode_val = "category"
+            combo_str = self.mode_combo.get()
+            if "Extension" in combo_str:
+                mode_val = "extension"
+            elif "Date" in combo_str:
+                mode_val = "date"
+
+            moved, skipped = organizer.organize(mode=mode_val, include_subfolders=self.subfolder_var.get())
+            messagebox.showinfo("Complete", f"File Declutter Finished!\n\nMoved: {moved} file(s)\nSkipped: {skipped} file(s)")
+            self.update_preview()
+        else:
+            confirm = messagebox.askyesno(
+                "Confirm Rename",
+                f"Execute renaming operation for {len(self.preview_data)} folder(s)?\n\nTarget: {config.target_path}",
+            )
+            if not confirm:
+                return
+
+            renamer = FolderRenamer(config)
+            renamed, skipped = renamer.run()
+            messagebox.showinfo("Complete", f"Rename Operation Finished!\n\nRenamed: {renamed}\nSkipped: {skipped}")
+            self.update_preview()
+
+    def _clean_empty_folders(self) -> None:
+        """Scans and safely removes empty subfolders."""
+        config = self._get_current_config()
+        if not config or not config.target_path.exists():
+            messagebox.showwarning("Warning", "Please select a valid directory.")
+            return
+
+        from folder_auto_renamer.cleaner import EmptyFolderCleaner
+        cleaner = EmptyFolderCleaner(config.target_path)
+        empty_list = cleaner.scan_empty_folders()
+
+        if not empty_list:
+            messagebox.showinfo("Info", "No empty folders found in the selected target directory.")
+            return
+
+        confirm = messagebox.askyesno(
+            "Confirm Clean Empty Folders",
+            f"Found {len(empty_list)} empty subfolder(s).\nDo you want to permanently delete them?\n\nDirectory: {config.target_path}",
+        )
+        if confirm:
+            removed, failed = cleaner.clean()
+            messagebox.showinfo("Success", f"Cleaned Empty Folders!\n\nRemoved: {removed}\nFailed: {failed}")
+            self.update_preview()
+
 
     def _filter_treeview(self, event=None) -> None:
         """Filters treeview rows based on search box input."""

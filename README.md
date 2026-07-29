@@ -15,7 +15,13 @@
 ## 🚀 Key Features
 
 - **Desktop GUI & CLI Dual Execution**: Run as a graphical Tkinter desktop app (`folder-auto-renamer --gui`) or headlessly via command-line interface.
-- **12 Advanced Renaming Modes**:
+- **🧹 Smart File & Folder Declutter Engine (NEW in v2.0.0)**:
+  - **Auto-Organize Files by Category**: Automatically sort files into `Images`, `Documents`, `Videos`, `Audio`, `Archives`, `Code & Data`, `Executables & Installers`.
+  - **Auto-Organize Files by Extension**: Group files into folders named by file extension (`.PNG`, `.PDF`, `.MP4`, etc.).
+  - **Auto-Organize Files by Date**: Organize files into Year/Month folder structures (`2026/07-July/`).
+  - **1-Click "Clean Downloads / Desktop" Presets**: Instant declutter button for chaotic `Downloads` or `Desktop` folders.
+  - **Empty Subfolder Cleaner**: 1-click tool to safely identify and delete empty folders.
+- **12 Advanced Folder Renaming Modes**:
   1. **Sequential**: `Project-001`, `Project-002`
   2. **Replace Text**: Swap specific text substrings (e.g. `Vacation -> Trip`)
   3. **Regex Search & Replace**: Capture groups and pattern matching (e.g. `^(\d{4})-(\d{2})` -> `\2_\1`)
@@ -31,13 +37,14 @@
 - **Windows Explorer Right-Click Integration**: 1-click button to register "Open in Auto Folder Renamer Pro" directly into Windows File Explorer's right-click context menu.
 - **Regex Preset Templates**: Built-in 1-click templates for quick Regex operations (Remove Numbers, Format Dates, Sanitize Slugs).
 - **Live Preview Table**: Interactive `Treeview` displaying current folder name vs proposed new name, with color-coded collision indicators.
-- **One-Click Naming Presets**: Quick-apply preset configurations for Camera Photos (`IMG-`), YouTube Projects (`Video-`), School Files (`Class-`), Client Projects (`Client-`), and Documents (`Doc-`).
+- **One-Click Naming & Declutter Presets**: Quick-apply preset configurations for Camera Photos (`IMG-`), YouTube Projects (`Video-`), School Files (`Class-`), Client Projects (`Client-`), Clean Downloads, and Clean Desktop.
 - **Dark & Light Mode Support**: Instant theme toggle for comfortable viewing.
 - **Auto-Indexing Duplicate Protection**: Resolve existing folder collisions automatically with index suffixes (e.g. `Project (1)`).
 - **Sorting & Pattern Filtering**: Sort folders by Name, Date Created, Date Modified, or Folder Size. Filter target subfolders using wildcards (`*2026*`).
 - **CSV History Export**: Export undo history logs to CSV spreadsheet files.
 - **Persistent Settings**: Saves last-used directory and UI preferences to `~/.folder_auto_renamer_gui_settings.json`.
-- **Zero Third-Party Dependencies**: Pure Python Standard Library implementation (`tkinter`, `ttk`, `re`, `datetime`, `json`, `csv`, `pathlib`).
+- **Zero Third-Party Dependencies**: Pure Python Standard Library implementation (`tkinter`, `ttk`, `re`, `datetime`, `shutil`, `json`, `csv`, `pathlib`).
+
 
 
 

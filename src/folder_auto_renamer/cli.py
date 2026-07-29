@@ -64,6 +64,19 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--organize",
+        type=str,
+        choices=["category", "extension", "date"],
+        help="Organize files into subfolders by 'category', 'extension', or 'date'.",
+    )
+
+    parser.add_argument(
+        "--clean-empty",
+        action="store_true",
+        help="Scan and delete empty subfolders in the target directory.",
+    )
+
+    parser.add_argument(
         "--gui",
         action="store_true",
         help="Launch the Auto Folder Renamer Pro graphical desktop application.",
@@ -82,7 +95,7 @@ def parse_args_to_config(args: argparse.Namespace) -> RenamerConfig:
     """Converts parsed command-line arguments into a RenamerConfig object."""
     target_path = Path(args.path) if args.path else None
 
-    if not args.undo and not args.gui and not target_path:
+    if not args.undo and not args.gui and not target_path and not getattr(args, "organize", None) and not getattr(args, "clean_empty", None):
         # Default to launching GUI if no path provided
         args.gui = True
 
@@ -105,14 +118,37 @@ def main(cli_args: Optional[List[str]] = None) -> int:
     parsed_args = parser.parse_args(cli_args)
 
     try:
-        if parsed_args.gui or (not parsed_args.path and not parsed_args.undo):
+        if parsed_args.gui or (not parsed_args.path and not parsed_args.undo and not getattr(parsed_args, "organize", None) and not getattr(parsed_args, "clean_empty", None)):
             from folder_auto_renamer.gui import launch_gui
             launch_gui()
+            return 0
+
+        target_path = Path(parsed_args.path) if parsed_args.path else None
+
+        if getattr(parsed_args, "organize", None):
+            if not target_path or not target_path.exists():
+                print(red("Error: Please specify a valid target directory path to organize."))
+                return 1
+            from folder_auto_renamer.organizer import FileOrganizer
+            organizer = FileOrganizer(target_path)
+            moved, skipped = organizer.organize(mode=parsed_args.organize, dry_run=parsed_args.dry_run)
+            print(f"File Organization Complete! Moved: {moved}, Skipped: {skipped}")
+            return 0
+
+        if getattr(parsed_args, "clean_empty", None):
+            if not target_path or not target_path.exists():
+                print(red("Error: Please specify a valid target directory path to clean."))
+                return 1
+            from folder_auto_renamer.cleaner import EmptyFolderCleaner
+            cleaner = EmptyFolderCleaner(target_path)
+            removed, failed = cleaner.clean(dry_run=parsed_args.dry_run)
+            print(f"Empty Folder Cleanup Complete! Removed: {removed}, Failed: {failed}")
             return 0
 
         config = parse_args_to_config(parsed_args)
         renamer = FolderRenamer(config)
         renamer.run()
+
         return 0
 
     except KeyboardInterrupt:
